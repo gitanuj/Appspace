@@ -1,0 +1,5 @@
+Appspace
+--------
+
+It's an Android application to scale CPU frequency making use of CPUFreq Userspace governor.
+The application detects the current application used by the user and ramps up/down the CPU based on it.It also sets a specific frequency when the screen is off.
