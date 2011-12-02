@@ -10,6 +10,7 @@ import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.ToggleButton;
 
+// Activity to provide ToggleButton and various other settings
 public class AppspaceActivity extends Activity {
 
 	private ToggleButton tb;
@@ -26,6 +27,7 @@ public class AppspaceActivity extends Activity {
 		c = getApplicationContext();
 		i = new Intent(c, DetectAppLaunchService.class);
 		
+		// Set initial state of ToggleButton
 		if(isMyServiceRunning(c)) {
 			tb.setChecked(true);
 		}
@@ -35,9 +37,11 @@ public class AppspaceActivity extends Activity {
 			@Override
 			public void onCheckedChanged(CompoundButton arg0, boolean arg1) {
 				if(arg1) {
+					// ToggleButton returns ON
 					c.startService(i);
 				}
 				else {
+					// ToggleButton returns OFF
 					new Thread() {
 						public void run() {
 							c.stopService(i);
@@ -48,6 +52,7 @@ public class AppspaceActivity extends Activity {
 		});
 	}
 	
+	// Method to check if the service is already running
 	public static boolean isMyServiceRunning(Context c) {
 	    ActivityManager manager = (ActivityManager) c.getSystemService(Context.ACTIVITY_SERVICE);
 	    for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {

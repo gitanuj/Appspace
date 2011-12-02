@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.util.Log;
 import android.widget.Toast;
 
+// BroadcastReceiver to listen for updates
 public class AppspaceReceiver extends BroadcastReceiver {
 
 	private static final String tag = "Receiver";
@@ -15,7 +16,6 @@ public class AppspaceReceiver extends BroadcastReceiver {
 	
 	@Override
 	public void onReceive(Context arg0, Intent arg1) {
-		
 		String action = arg1.getAction();
 //		ArrayList<String> freq = new ArrayList<String>();
 //        
@@ -40,12 +40,15 @@ public class AppspaceReceiver extends BroadcastReceiver {
 		String min = SysFS.getSCALING_MIN_FREQ();
 		String max = SysFS.getSCALING_MAX_FREQ();
         
+		// New app launch detected
 		if(action.equals(APP_LAUNCH_DETECTED)) {
 			Log.i(tag, "receiver called with data ::: "+arg1.getExtras().getString("appName"));
 	        if(!SysFS.setSCALING_SETSPEED(max)) {
 	        	Toast.makeText(arg0, "Please change to userspace governor", Toast.LENGTH_SHORT).show();
 	        }
 		}
+		
+		// User has unlocked the screen lock
 		else if(action.equals(Intent.ACTION_USER_PRESENT)) {
 			if(AppspaceActivity.isMyServiceRunning(arg0)) {
 				Log.i(tag, "user present");
@@ -55,6 +58,8 @@ public class AppspaceReceiver extends BroadcastReceiver {
 				DetectAppLaunchService.bt.loop_cpu = true;
 			}
 		}
+		
+		// User has turned the screen OFF
 		else if(action.equals(SCREEN_OFF)) {
 			Log.i(tag, "screen off");
 			if(!SysFS.setSCALING_SETSPEED(min)) {
@@ -62,6 +67,8 @@ public class AppspaceReceiver extends BroadcastReceiver {
 			}
 			DetectAppLaunchService.bt.loop_cpu = false;
 		}
+		
+		// User has turned the screen ON
 		else if(action.equals(SCREEN_ON)) {
 			Log.i(tag, "screen on");
 		}

@@ -13,6 +13,7 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.util.Log;
 
+// BackgroundTask to perform persistent tasks
 public class BackgroundTask extends AsyncTask<Context, String, String> {
 
 	private static final String tag = "backgroundtask";
@@ -24,6 +25,8 @@ public class BackgroundTask extends AsyncTask<Context, String, String> {
 	DataOutputStream dos;
 	BufferedReader br;
 	boolean loop, loop_cpu;
+	
+	// Thread to constantly calculate CPU usage
 	Thread t = new Thread() {
 		public void run() {
 			String l;

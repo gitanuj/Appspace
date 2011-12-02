@@ -9,6 +9,7 @@ import java.io.IOException;
 
 import android.util.Log;
 
+// Class providing methods to manipulate cpufreq files
 public class SysFS {
 	
 	private static final String tag = "SysFS";
@@ -16,7 +17,7 @@ public class SysFS {
 	// Path to the cpufreq directory of the android kernel
 	private static String PATH_TO_CPUFREQ = "/sys/devices/system/cpu/cpu0/cpufreq/";
 	
-	// Names of files related to cpu
+	// Names of files related to CPU
 	private static String SCALING_SETSPEED = PATH_TO_CPUFREQ + "scaling_setspeed";
 	private static String SCALING_AVAILABLE_FREQUENCIES = PATH_TO_CPUFREQ + "scaling_available_frequencies";
 	private static String SCALING_CUR_FREQ = PATH_TO_CPUFREQ + "scaling_cur_freq";
@@ -57,7 +58,7 @@ public class SysFS {
 		
 	}
 
-	// Methods
+	// Private methods
 	private static String readFile(String path) {
 		String ans = "";
 		StringBuffer str = new StringBuffer("");
@@ -84,6 +85,7 @@ public class SysFS {
 		return res;
 	}
 	
+	// Public methods
 	public static String getSCALING_AVAILABLE_FREQUENCIES() {
 		return readFile(SCALING_AVAILABLE_FREQUENCIES);
 	}
