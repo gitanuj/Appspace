@@ -1,5 +1,7 @@
 package com.appspace.main;
 
+import java.io.IOException;
+
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
@@ -26,6 +28,14 @@ public class AppspaceActivity extends Activity {
 		tb = (ToggleButton) findViewById(R.id.toggleButton1);
 		c = getApplicationContext();
 		i = new Intent(c, DetectAppLaunchService.class);
+		
+		// Install the database
+		AppspaceDbHelper helper = new AppspaceDbHelper(c);
+		try {
+			helper.createDataBase();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		
 		// Set initial state of ToggleButton
 		if(isMyServiceRunning(c)) {

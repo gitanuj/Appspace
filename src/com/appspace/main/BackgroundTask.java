@@ -94,7 +94,7 @@ public class BackgroundTask extends AsyncTask<Context, String, String> {
 			int start, end;
 			
 			// Calculate CPU Usage
-			t.start();
+//			t.start();
 			
 			// Detect App launch
 			while(loop) {
@@ -103,10 +103,10 @@ public class BackgroundTask extends AsyncTask<Context, String, String> {
 					if(line.matches(activityNamePattern)) {
 						start = line.indexOf("cmp=");
 						temp = line.substring(start);
-						end = temp.indexOf(" }");
+						end = temp.indexOf("/");
 						temp = temp.substring(4, end);
 						
-						params[0].sendBroadcast(new Intent(AppspaceReceiver.APP_LAUNCH_DETECTED).putExtra("appName", temp));
+						params[0].sendBroadcast(new Intent(AppspaceReceiver.APP_LAUNCH_DETECTED).putExtra("package", temp));
 					}
 					else if(line.matches(powerNamePattern)) {
 						char c = line.charAt(line.length()-1);

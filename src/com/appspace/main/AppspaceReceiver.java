@@ -13,46 +13,49 @@ public class AppspaceReceiver extends BroadcastReceiver {
 	public static final String APP_LAUNCH_DETECTED = "com.appspace.main.NEW_APP_LAUNCHED";
 	public static final String SCREEN_OFF = "com.appspace.main.SCREEN_OFF";
 	public static final String SCREEN_ON = "com.appspace.main.SCREEN_ON";
+	public static final int CATEGORY_HIGH_DEMANDING = 1;
+	public static final int CATEGORY_MODERATE_DEMANDING = 2;
+	public static final int CATEGORY_LOW_DEMANDING = 3;
 	
 	@Override
 	public void onReceive(Context arg0, Intent arg1) {
 		String action = arg1.getAction();
-//		ArrayList<String> freq = new ArrayList<String>();
-//        
-//        String all = SysFS.getSCALING_AVAILABLE_FREQUENCIES();
-//        String min = SysFS.getSCALING_MIN_FREQ();
-//        String max = SysFS.getSCALING_MAX_FREQ();
-//        String temp = "";
-//        
-//        StringTokenizer st = new StringTokenizer(all, " ");
-//        while(st.hasMoreTokens())
-//        {
-//        	temp = st.nextToken();
-//        	if(Integer.parseInt(temp) >= Integer.parseInt(min))
-//        	{
-//        		if(Integer.parseInt(temp) <= Integer.parseInt(max))
-//        		{
-//        			freq.add(temp);
-//        		}
-//        	}
-//        }
-		
-		String min = SysFS.getSCALING_MIN_FREQ();
-		String max = SysFS.getSCALING_MAX_FREQ();
         
 		// New app launch detected
 		if(action.equals(APP_LAUNCH_DETECTED)) {
-			Log.i(tag, "receiver called with data ::: "+arg1.getExtras().getString("appName"));
-	        if(!SysFS.setSCALING_SETSPEED(max)) {
-	        	Toast.makeText(arg0, "Please change to userspace governor", Toast.LENGTH_SHORT).show();
-	        }
+			AppspaceDbAdapter adapter = new AppspaceDbAdapter(arg0);
+			adapter.open();
+			String pname = arg1.getExtras().getString("package");
+			System.out.println(pname);
+			int category = adapter.fetchPackageCategory(pname);
+			adapter.close();
+			Log.i(tag, "Category = "+category);
+			
+			if(category == CATEGORY_HIGH_DEMANDING) {
+				if(!SysFS.setSCALING_SETSPEED(DetectAppLaunchService.freq.get(DetectAppLaunchService.freq.size()-1))) {
+		        	Toast.makeText(arg0, "Please change to userspace governor", Toast.LENGTH_SHORT).show();
+		        }
+			}
+			else if(category == CATEGORY_MODERATE_DEMANDING) {
+				if(!SysFS.setSCALING_SETSPEED(DetectAppLaunchService.freq.get(DetectAppLaunchService.freq.size()/2))) {
+		        	Toast.makeText(arg0, "Please change to userspace governor", Toast.LENGTH_SHORT).show();
+		        }
+			}
+			else if(category == CATEGORY_LOW_DEMANDING) {
+				if(!SysFS.setSCALING_SETSPEED(DetectAppLaunchService.freq.get(1))) {
+		        	Toast.makeText(arg0, "Please change to userspace governor", Toast.LENGTH_SHORT).show();
+		        }
+			}
+			else {
+				// Either category not defined or there is no entry for the package
+			}
 		}
 		
 		// User has unlocked the screen lock
 		else if(action.equals(Intent.ACTION_USER_PRESENT)) {
 			if(AppspaceActivity.isMyServiceRunning(arg0)) {
 				Log.i(tag, "user present");
-				if(!SysFS.setSCALING_SETSPEED(max)) {
+				if(!SysFS.setSCALING_SETSPEED(DetectAppLaunchService.freq.get(DetectAppLaunchService.freq.size()/2))) {
 		        	Toast.makeText(arg0, "Please change to userspace governor", Toast.LENGTH_SHORT).show();
 				}
 				DetectAppLaunchService.bt.loop_cpu = true;
@@ -62,7 +65,8 @@ public class AppspaceReceiver extends BroadcastReceiver {
 		// User has turned the screen OFF
 		else if(action.equals(SCREEN_OFF)) {
 			Log.i(tag, "screen off");
-			if(!SysFS.setSCALING_SETSPEED(min)) {
+			// Set frequency to minimum
+			if(!SysFS.setSCALING_SETSPEED(DetectAppLaunchService.freq.get(0))) {
 	        	Toast.makeText(arg0, "Please change to userspace governor", Toast.LENGTH_SHORT).show();
 			}
 			DetectAppLaunchService.bt.loop_cpu = false;
