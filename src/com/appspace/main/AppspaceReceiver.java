@@ -1,7 +1,5 @@
 package com.appspace.main;
 
-import java.util.ArrayList;
-import java.util.StringTokenizer;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -54,6 +52,7 @@ public class AppspaceReceiver extends BroadcastReceiver {
 				if(!SysFS.setSCALING_SETSPEED(max)) {
 		        	Toast.makeText(arg0, "Please change to userspace governor", Toast.LENGTH_SHORT).show();
 				}
+				DetectAppLaunchService.bt.loop_cpu = true;
 			}
 		}
 		else if(action.equals(SCREEN_OFF)) {
@@ -61,12 +60,10 @@ public class AppspaceReceiver extends BroadcastReceiver {
 			if(!SysFS.setSCALING_SETSPEED(min)) {
 	        	Toast.makeText(arg0, "Please change to userspace governor", Toast.LENGTH_SHORT).show();
 			}
+			DetectAppLaunchService.bt.loop_cpu = false;
 		}
 		else if(action.equals(SCREEN_ON)) {
 			Log.i(tag, "screen on");
-			if(!SysFS.setSCALING_SETSPEED(min)) {
-	        	Toast.makeText(arg0, "Please change to userspace governor", Toast.LENGTH_SHORT).show();
-			}
 		}
 	}
 }
