@@ -1,8 +1,0 @@
-*.properties
-*.cfg
-*.sh
-.project
-.gitignore
-.classpath
-bin/*
-gen/*
