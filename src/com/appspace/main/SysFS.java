@@ -106,7 +106,6 @@ public class SysFS {
 			try {
 				dos.writeBytes("echo \"" + sCALING_SETSPEED + "\" > " + SCALING_SETSPEED + "\n");
 				dos.flush();
-				Log.i(tag, "Frequency set to "+getSCALING_CUR_FREQ()+" kHz");
 				return true;
 			} catch (IOException e) {
 				e.printStackTrace();

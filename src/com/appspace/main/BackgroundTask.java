@@ -17,6 +17,7 @@ import android.util.Log;
 public class BackgroundTask extends AsyncTask<Context, String, String> {
 
 	private static final String tag = "backgroundtask";
+	private static final String CPUConfigFile = "/proc/stat";
 	private static final String activityNamePattern = ".*Starting: Intent .*";
 	private static final String powerNamePattern = ".*set_screen_state.*";
     private static final String logCatCommand = "logcat ActivityManager:I *:S power:I";
@@ -30,7 +31,6 @@ public class BackgroundTask extends AsyncTask<Context, String, String> {
 	
 	// Thread to constantly calculate CPU usage
 	Thread t = new Thread() {
-		
 		public void run() {
 			String l;
 			RandomAccessFile raf;
@@ -39,9 +39,10 @@ public class BackgroundTask extends AsyncTask<Context, String, String> {
 			cpuUsage=0.0f;
 			loop_cpu = true;
 			try {
-				raf = new RandomAccessFile(new File("/proc/stat"), "r");
+				raf = new RandomAccessFile(new File(CPUConfigFile), "r");
 				while(loop_cpu) {
 					l = raf.readLine();
+					// Tokenize the line
 					st = new StringTokenizer(l, " ");
 					for(int i=0; st.hasMoreTokens(); i++) {
 						if(i == 0) {
@@ -63,11 +64,13 @@ public class BackgroundTask extends AsyncTask<Context, String, String> {
 					time2 = total2 = 0;
 					raf.seek(0);
 					
+					// Thread must wait here
 					synchronized(Thread.currentThread()) {
 						while(pleaseWait) {
 							Thread.currentThread().wait();
 						}
 					}
+					// Thread must resume once it is notified
 					pleaseWait = true;
 				}
 			} catch (FileNotFoundException e1) {
@@ -83,8 +86,10 @@ public class BackgroundTask extends AsyncTask<Context, String, String> {
 	@Override
 	protected String doInBackground(Context... params) {
 		try {
+			// Set the loop variable for detecting app launch
 			loop = true;
-			Log.i(tag, "service thread started");
+			
+			// Clear the logcat
 			p = Runtime.getRuntime().exec(clearLogCatCommand);
 			p.waitFor();
 			p = Runtime.getRuntime().exec(logCatCommand);
@@ -106,14 +111,17 @@ public class BackgroundTask extends AsyncTask<Context, String, String> {
 					end = temp.indexOf("/");
 					temp = temp.substring(4, end);
 					
+					// Send signal to receiver that an app launch has been detected
 					params[0].sendBroadcast(new Intent(AppspaceReceiver.APP_LAUNCH_DETECTED).putExtra("package", temp));
 				}
 				else if(line.matches(powerNamePattern)) {
 					char c = line.charAt(line.length()-1);
 					if(c == '0') {
+						// Send signal to receiver that screen has been turned off
 						params[0].sendBroadcast(new Intent(AppspaceReceiver.SCREEN_OFF));
 					}
 					else if(c == '1') {
+						// Send signal to receiver that screen has been turned on
 						params[0].sendBroadcast(new Intent(AppspaceReceiver.SCREEN_ON));
 					}
 				}
@@ -129,10 +137,12 @@ public class BackgroundTask extends AsyncTask<Context, String, String> {
 	@Override
 	protected void onCancelled() {
 		super.onCancelled();
+		// Resume the CPU usage calculating thread
 		synchronized(t){
 			pleaseWait = false;
 			t.notify();
 		}
+		// Stop any thread running
 		loop = loop_cpu = false;
 		new Thread() {
 			public void run() {

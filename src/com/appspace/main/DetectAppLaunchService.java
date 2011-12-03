@@ -22,10 +22,8 @@ public class DetectAppLaunchService extends Service {
 	}
 
 	@Override
-	public int onStartCommand(Intent intent, int flags, int startId) {
-		Log.i(tag, "service started");
-		
-		// Fetch CPU info before doing anything
+	public int onStartCommand(Intent intent, int flags, int startId) {		
+		// Fetch one time CPU info before doing anything
 		freq = new ArrayList<String>();
       
 		int minFrequency = Integer.parseInt(SysFS.getSCALING_MIN_FREQ());
@@ -33,13 +31,11 @@ public class DetectAppLaunchService extends Service {
 		String all = SysFS.getSCALING_AVAILABLE_FREQUENCIES();
 		int temp;
 		String temp1;
-		
 		StringTokenizer st = new StringTokenizer(all, " ");
 		while(st.hasMoreTokens()) {
 			temp1 = st.nextToken();
 			temp = Integer.parseInt(temp1);
 			if((temp >= minFrequency) && (temp <= maxFrequency)) {
-				System.out.println(temp1);
 				freq.add(temp1);
 			}
 		}
@@ -66,6 +62,5 @@ public class DetectAppLaunchService extends Service {
 		
 		// Kill superuser process
 		SysFS.killSuperuserProcess();
-		Log.i(tag, "service destroyed");
 	}
 }

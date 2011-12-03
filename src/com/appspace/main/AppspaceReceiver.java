@@ -16,11 +16,12 @@ public class AppspaceReceiver extends BroadcastReceiver {
 	public static final int CATEGORY_HIGH_DEMANDING = 1;
 	public static final int CATEGORY_MODERATE_DEMANDING = 2;
 	public static final int CATEGORY_LOW_DEMANDING = 3;
+	public static final int CATEGORY_UNKNOWN = 4;
 	float THRESHOLD_CPU_USAGE = 50f;
-	int MAX_COUNT = 3;
+	int MAX_COUNT = 10;
 	int category_thread;
 	boolean loop;
-	int CPU_PROBE_TIME = 3000;
+	int CPU_PROBE_TIME = 1500;
 	
 	@Override
 	public void onReceive(Context arg0, Intent arg1) {
@@ -32,47 +33,39 @@ public class AppspaceReceiver extends BroadcastReceiver {
 			AppspaceDbAdapter adapter = new AppspaceDbAdapter(arg0);
 			adapter.open();
 			String pname = arg1.getExtras().getString("package");
-			System.out.println(pname);
 			int category = adapter.fetchPackageCategory(pname);
 			adapter.close();
-			Log.i(tag, "Category = "+category);
 			
 			if(category == CATEGORY_HIGH_DEMANDING || category == CATEGORY_MODERATE_DEMANDING || category == CATEGORY_LOW_DEMANDING) {
 				setFrequencyRange(category);
 			}
 			else {
 				// Either category not defined or there is no entry for the package
-				setFrequencyRange(CATEGORY_LOW_DEMANDING);
+				setFrequencyRange(CATEGORY_UNKNOWN);
 			}
 		}
 		
 		// User has unlocked the screen lock or User present
 		else if(action.equals(Intent.ACTION_USER_PRESENT)) {
 			if(AppspaceActivity.isMyServiceRunning(arg0)) {
-				Log.i(tag, "user present");
-				setFrequencyRange(CATEGORY_MODERATE_DEMANDING);
+				setFrequencyRange(CATEGORY_UNKNOWN);
 			}
 		}
 		
 		// User has turned the screen OFF
 		else if(action.equals(SCREEN_OFF)) {
-			Log.i(tag, "screen off");
 			// Set frequency to minimum
-			if(!SysFS.setSCALING_SETSPEED(DetectAppLaunchService.freq.get(DetectAppLaunchService.MIN))) {
-	        	Toast.makeText(arg0, "Please change to userspace governor", Toast.LENGTH_SHORT).show();
-			}
+			SysFS.setSCALING_SETSPEED(DetectAppLaunchService.freq.get(DetectAppLaunchService.MIN));
 		}
 		
 		// User has turned the screen ON
 		else if(action.equals(SCREEN_ON)) {
-			Log.i(tag, "screen on");
 			// Set frequency to minimum+1
-			if(!SysFS.setSCALING_SETSPEED(DetectAppLaunchService.freq.get(DetectAppLaunchService.MIN+1))) {
-	        	Toast.makeText(arg0, "Please change to userspace governor", Toast.LENGTH_SHORT).show();
-			}
+			SysFS.setSCALING_SETSPEED(DetectAppLaunchService.freq.get(DetectAppLaunchService.MIN+1));
 		}
 	}
 	
+	// Method to set the frequency according to app category from DB
 	private void setFrequencyRange(int c) {
 		category_thread = c;
 		new Thread() {
@@ -90,7 +83,12 @@ public class AppspaceReceiver extends BroadcastReceiver {
 					start = DetectAppLaunchService.MIN;
 					stop = DetectAppLaunchService.MAX - 2;
 				}
+				else if(category_thread == CATEGORY_UNKNOWN) {
+					start = DetectAppLaunchService.MIN;
+					stop = DetectAppLaunchService.MAX;
+				}
 				
+				// Set the initial frequency to start
 				SysFS.setSCALING_SETSPEED(DetectAppLaunchService.freq.get(start));
 				
 				// Resume the thread calculating CPU usage
@@ -116,16 +114,17 @@ public class AppspaceReceiver extends BroadcastReceiver {
 					if(!loop)
 						break;
 					
-					// Resume the thread calculating CPU usage
+					// Resume/Notify the thread calculating CPU usage
 					synchronized(DetectAppLaunchService.bt.t){
 						DetectAppLaunchService.bt.pleaseWait = false;
 						DetectAppLaunchService.bt.t.notify();
 					}
 					
+					// Read CPU usage
 					cpuUsage = DetectAppLaunchService.bt.cpuUsage;
-					Log.i(tag, "CPU usage = "+cpuUsage+" %");
 					if(cpuUsage > THRESHOLD_CPU_USAGE) {
-						if((current+1 <= stop) && (count <= MAX_COUNT)) {
+						if((current+1 <= stop) && (count < MAX_COUNT)) {
+							// Scale up the frequency to next level
 							current++;
 							SysFS.setSCALING_SETSPEED(DetectAppLaunchService.freq.get(current));
 							count++;
@@ -135,7 +134,8 @@ public class AppspaceReceiver extends BroadcastReceiver {
 						}
 					}
 					else {
-						if((current-1 >= start && (count <= MAX_COUNT))) {
+						if((current-1 >= start && (count < MAX_COUNT))) {
+							// Scale down the frequency to previous level
 							current--;
 							SysFS.setSCALING_SETSPEED(DetectAppLaunchService.freq.get(current));
 							count++;

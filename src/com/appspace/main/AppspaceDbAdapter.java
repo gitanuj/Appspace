@@ -5,6 +5,7 @@ import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 
+// Adapter class to interface with database
 public class AppspaceDbAdapter {
 
 	public static final String TABLE_NAME = "main";
@@ -18,16 +19,19 @@ public class AppspaceDbAdapter {
 		this.context = m;
 	}
 	
+	// Open the database
 	public synchronized AppspaceDbAdapter open() throws SQLException {
 		dbHelper = new AppspaceDbHelper(context);
 		database = dbHelper.getWritableDatabase();
 		return this;
 	}
 
+	// Close the database
 	public synchronized void close() {
 		dbHelper.close();
 	}
 	
+	// Fetch the category corressponding to the app package
 	public int fetchPackageCategory(String pname) {
 		Cursor c = database.query(TABLE_NAME, new String[]{FIELD_CATEGORY}, FIELD_PACKAGE+" = '"+pname+"'", null, null, null, null);
 		if(c.moveToFirst()) {

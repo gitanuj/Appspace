@@ -11,6 +11,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 
+// Helper class to connect to the database
 public class AppspaceDbHelper extends SQLiteOpenHelper{
 
 	private static String DB_PATH = "/data/data/com.appspace.main/databases/";
@@ -26,12 +27,12 @@ public class AppspaceDbHelper extends SQLiteOpenHelper{
     public void createDataBase() throws IOException {
     	boolean dbExist = checkDataBase();
     	if(dbExist){
-    		//do nothing - database already exist
+    		//Database already exists
     	}else{
     		//By calling this method and empty database will be created into the default system path
-               //of your application so we are gonna be able to overwrite that database with our database.
         	this.getReadableDatabase();
         	try {
+        		// Copy our database into system
     			copyDataBase();
     		} catch (IOException e) {
         		throw new Error("Error copying database");
@@ -56,7 +57,7 @@ public class AppspaceDbHelper extends SQLiteOpenHelper{
     }
     
     private void copyDataBase() throws IOException {
-    	//Open your local db as the input stream
+    	//Open local db as the input stream
     	InputStream myInput = myContext.getAssets().open(DB_NAME);
  
     	// Path to the just created empty db

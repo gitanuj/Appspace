@@ -42,6 +42,7 @@ public class AppspaceActivity extends Activity {
 			tb.setChecked(true);
 		}
 		
+		// Attach ToggleButton with Event listener
 		tb.setOnCheckedChangeListener(new OnCheckedChangeListener() {
 			
 			@Override
