@@ -15,8 +15,10 @@ public class AppspaceReceiver extends BroadcastReceiver {
 	private static final int CATEGORY_LOW_DEMANDING = 3;
 	private static final int CATEGORY_UNKNOWN = 4;
 	private static final float THRESHOLD_CPU_USAGE = 50f;
-	private static final int MAX_COUNT = 10;
+	private static final int MAX_COUNT = 5;
 	private static final int CPU_PROBE_TIME = 1500;
+	public static int category = -1;
+	public static int screen_state = -1;
 
 	private int category_thread;
 	private boolean loop;
@@ -28,10 +30,11 @@ public class AppspaceReceiver extends BroadcastReceiver {
         
 		// New app launch detected
 		if(action.equals(APP_LAUNCH_DETECTED)) {
+			screen_state = 1;
 			String pname = arg1.getExtras().getString("package");
 			AppspaceDbAdapter adapter = new AppspaceDbAdapter(arg0);
 			adapter.open();
-			int category = adapter.fetchPackageCategory(pname);
+			category = adapter.fetchPackageCategory(pname);
 			adapter.close();
 			
 			if(category == CATEGORY_HIGH_DEMANDING || category == CATEGORY_MODERATE_DEMANDING || category == CATEGORY_LOW_DEMANDING) {
@@ -45,6 +48,7 @@ public class AppspaceReceiver extends BroadcastReceiver {
 		
 		// User has unlocked the screen lock or User present
 		else if(action.equals(Intent.ACTION_USER_PRESENT)) {
+			screen_state = 1;
 			if(AppspaceActivity.isMyServiceRunning(arg0)) {
 				setFrequencyRange(CATEGORY_UNKNOWN);
 			}
@@ -52,12 +56,14 @@ public class AppspaceReceiver extends BroadcastReceiver {
 		
 		// User has turned the screen OFF
 		else if(action.equals(SCREEN_OFF)) {
+			screen_state = 0;
 			// Set frequency to minimum
 			SysFS.setSCALING_SETSPEED(DetectAppLaunchService.freq.get(DetectAppLaunchService.MIN));
 		}
 		
 		// User has turned the screen ON
 		else if(action.equals(SCREEN_ON)) {
+			screen_state = 1;
 			// Set frequency to minimum+1
 			SysFS.setSCALING_SETSPEED(DetectAppLaunchService.freq.get(DetectAppLaunchService.MIN+1));
 		}

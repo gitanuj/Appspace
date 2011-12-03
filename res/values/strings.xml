@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Appspace</string>
+    <string name="instructions">Instructions :\n1. After turning ON, the app will take around 4 hrs to complete its testing. It will send a notification in the bar for the same.\n2. Please do not charge the mobile during testing.\n3. Please use the mobile while testing as you normally would.\n4. You may experience slowdowns, but please bear with it.\n5. After completion, extract /data/data/com.appspace.main/files/log.txt</string>
 
 </resources>

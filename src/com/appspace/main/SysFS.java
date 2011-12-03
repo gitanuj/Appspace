@@ -113,7 +113,16 @@ public class SysFS {
 			}
 		}
 		else {
-			Log.i(tag, "Please change to userspace governor");
+			return false;
+		}
+	}
+	public static boolean setSCALING_GOVERNOR(String sCALING_GOVERNOR) {
+		try {
+			dos.writeBytes("echo \"" + sCALING_GOVERNOR + "\" > " + SCALING_GOVERNOR + "\n");
+			dos.flush();
+			return true;
+		} catch (IOException e) {
+			e.printStackTrace();
 			return false;
 		}
 	}
