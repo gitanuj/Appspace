@@ -15,7 +15,7 @@ public class AppspaceReceiver extends BroadcastReceiver {
 	private static final int CATEGORY_LOW_DEMANDING = 3;
 	private static final int CATEGORY_UNKNOWN = 4;
 	private static final float THRESHOLD_CPU_USAGE = 50f;
-	private static final int MAX_COUNT = 10;
+	private static final int MAX_COUNT = 5;
 	private static final int CPU_PROBE_TIME = 1500;
 
 	private int category_thread;
