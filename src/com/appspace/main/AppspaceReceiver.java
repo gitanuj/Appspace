@@ -16,10 +16,16 @@ public class AppspaceReceiver extends BroadcastReceiver {
 	public static final int CATEGORY_HIGH_DEMANDING = 1;
 	public static final int CATEGORY_MODERATE_DEMANDING = 2;
 	public static final int CATEGORY_LOW_DEMANDING = 3;
+	float THRESHOLD_CPU_USAGE = 50f;
+	int MAX_COUNT = 3;
+	int category_thread;
+	boolean loop;
+	int CPU_PROBE_TIME = 3000;
 	
 	@Override
 	public void onReceive(Context arg0, Intent arg1) {
 		String action = arg1.getAction();
+		loop = false;
         
 		// New app launch detected
 		if(action.equals(APP_LAUNCH_DETECTED)) {
@@ -31,34 +37,20 @@ public class AppspaceReceiver extends BroadcastReceiver {
 			adapter.close();
 			Log.i(tag, "Category = "+category);
 			
-			if(category == CATEGORY_HIGH_DEMANDING) {
-				if(!SysFS.setSCALING_SETSPEED(DetectAppLaunchService.freq.get(DetectAppLaunchService.freq.size()-1))) {
-		        	Toast.makeText(arg0, "Please change to userspace governor", Toast.LENGTH_SHORT).show();
-		        }
-			}
-			else if(category == CATEGORY_MODERATE_DEMANDING) {
-				if(!SysFS.setSCALING_SETSPEED(DetectAppLaunchService.freq.get(DetectAppLaunchService.freq.size()/2))) {
-		        	Toast.makeText(arg0, "Please change to userspace governor", Toast.LENGTH_SHORT).show();
-		        }
-			}
-			else if(category == CATEGORY_LOW_DEMANDING) {
-				if(!SysFS.setSCALING_SETSPEED(DetectAppLaunchService.freq.get(1))) {
-		        	Toast.makeText(arg0, "Please change to userspace governor", Toast.LENGTH_SHORT).show();
-		        }
+			if(category == CATEGORY_HIGH_DEMANDING || category == CATEGORY_MODERATE_DEMANDING || category == CATEGORY_LOW_DEMANDING) {
+				setFrequencyRange(category);
 			}
 			else {
 				// Either category not defined or there is no entry for the package
+				setFrequencyRange(CATEGORY_LOW_DEMANDING);
 			}
 		}
 		
-		// User has unlocked the screen lock
+		// User has unlocked the screen lock or User present
 		else if(action.equals(Intent.ACTION_USER_PRESENT)) {
 			if(AppspaceActivity.isMyServiceRunning(arg0)) {
 				Log.i(tag, "user present");
-				if(!SysFS.setSCALING_SETSPEED(DetectAppLaunchService.freq.get(DetectAppLaunchService.freq.size()/2))) {
-		        	Toast.makeText(arg0, "Please change to userspace governor", Toast.LENGTH_SHORT).show();
-				}
-				DetectAppLaunchService.bt.loop_cpu = true;
+				setFrequencyRange(CATEGORY_MODERATE_DEMANDING);
 			}
 		}
 		
@@ -66,15 +58,94 @@ public class AppspaceReceiver extends BroadcastReceiver {
 		else if(action.equals(SCREEN_OFF)) {
 			Log.i(tag, "screen off");
 			// Set frequency to minimum
-			if(!SysFS.setSCALING_SETSPEED(DetectAppLaunchService.freq.get(0))) {
+			if(!SysFS.setSCALING_SETSPEED(DetectAppLaunchService.freq.get(DetectAppLaunchService.MIN))) {
 	        	Toast.makeText(arg0, "Please change to userspace governor", Toast.LENGTH_SHORT).show();
 			}
-			DetectAppLaunchService.bt.loop_cpu = false;
 		}
 		
 		// User has turned the screen ON
 		else if(action.equals(SCREEN_ON)) {
 			Log.i(tag, "screen on");
+			// Set frequency to minimum+1
+			if(!SysFS.setSCALING_SETSPEED(DetectAppLaunchService.freq.get(DetectAppLaunchService.MIN+1))) {
+	        	Toast.makeText(arg0, "Please change to userspace governor", Toast.LENGTH_SHORT).show();
+			}
 		}
+	}
+	
+	private void setFrequencyRange(int c) {
+		category_thread = c;
+		new Thread() {
+			public synchronized void run() {
+				int start=0, stop=0;
+				if(category_thread == CATEGORY_HIGH_DEMANDING) {
+					start = DetectAppLaunchService.MIN + 2;
+					stop = DetectAppLaunchService.MAX;
+				}
+				else if(category_thread == CATEGORY_MODERATE_DEMANDING) {
+					start = DetectAppLaunchService.MIN + 1;
+					stop = DetectAppLaunchService.MAX - 1;
+				}
+				else if(category_thread == CATEGORY_LOW_DEMANDING) {
+					start = DetectAppLaunchService.MIN;
+					stop = DetectAppLaunchService.MAX - 2;
+				}
+				
+				SysFS.setSCALING_SETSPEED(DetectAppLaunchService.freq.get(start));
+				
+				// Resume the thread calculating CPU usage
+				synchronized(DetectAppLaunchService.bt.t){
+					DetectAppLaunchService.bt.pleaseWait = false;
+					DetectAppLaunchService.bt.t.notify();
+				}
+				
+				int current = start;
+				int count = 0;
+				loop = true;
+				float cpuUsage;
+				
+				while(loop) {
+					
+					// Wait according to CPU_PROBE_TIME
+					try {
+						Thread.sleep(CPU_PROBE_TIME);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+					
+					if(!loop)
+						break;
+					
+					// Resume the thread calculating CPU usage
+					synchronized(DetectAppLaunchService.bt.t){
+						DetectAppLaunchService.bt.pleaseWait = false;
+						DetectAppLaunchService.bt.t.notify();
+					}
+					
+					cpuUsage = DetectAppLaunchService.bt.cpuUsage;
+					Log.i(tag, "CPU usage = "+cpuUsage+" %");
+					if(cpuUsage > THRESHOLD_CPU_USAGE) {
+						if((current+1 <= stop) && (count <= MAX_COUNT)) {
+							current++;
+							SysFS.setSCALING_SETSPEED(DetectAppLaunchService.freq.get(current));
+							count++;
+						}
+						else {
+							loop = false;
+						}
+					}
+					else {
+						if((current-1 >= start && (count <= MAX_COUNT))) {
+							current--;
+							SysFS.setSCALING_SETSPEED(DetectAppLaunchService.freq.get(current));
+							count++;
+						}
+						else {
+							loop = false;
+						}
+					}
+				}
+			}
+		}.start();
 	}
 }

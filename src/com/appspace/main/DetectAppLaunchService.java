@@ -14,6 +14,7 @@ public class DetectAppLaunchService extends Service {
 	private static final String tag = "Service";
     public static BackgroundTask bt;
     public static ArrayList<String> freq;
+    public static int MIN, MAX;
     
 	@Override
 	public IBinder onBind(Intent arg0) {
@@ -38,9 +39,12 @@ public class DetectAppLaunchService extends Service {
 			temp1 = st.nextToken();
 			temp = Integer.parseInt(temp1);
 			if((temp >= minFrequency) && (temp <= maxFrequency)) {
+				System.out.println(temp1);
 				freq.add(temp1);
 			}
 		}
+		MIN = 0;
+		MAX = freq.size()-1;
 		
 		// Spawn a superuser process to get root access
 		SysFS.spawnSuperuserProcess();
