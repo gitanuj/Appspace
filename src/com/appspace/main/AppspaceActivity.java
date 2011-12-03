@@ -18,7 +18,7 @@ public class AppspaceActivity extends Activity {
 	private ToggleButton tb;
 	private Context c;
 	private Intent i;
-	public static final String myService = "com.appspace.main.DetectAppLaunchService";
+	private final static String myService = "com.appspace.main.DetectAppLaunchService";
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {

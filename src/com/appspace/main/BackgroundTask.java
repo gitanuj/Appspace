@@ -11,26 +11,24 @@ import java.util.StringTokenizer;
 import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
-import android.util.Log;
 
 // BackgroundTask to perform persistent tasks
 public class BackgroundTask extends AsyncTask<Context, String, String> {
 
-	private static final String tag = "backgroundtask";
 	private static final String CPUConfigFile = "/proc/stat";
 	private static final String activityNamePattern = ".*Starting: Intent .*";
 	private static final String powerNamePattern = ".*set_screen_state.*";
     private static final String logCatCommand = "logcat ActivityManager:I *:S power:I";
     private static final String clearLogCatCommand = "logcat -c";
-	Process p;
-	DataOutputStream dos;
-	BufferedReader br;
-	boolean loop,loop_cpu;
-	float cpuUsage;
-	boolean pleaseWait = true;
+	private Process p;
+	private DataOutputStream dos;
+	private BufferedReader br;
+	public boolean loop,loop_cpu;
+	public float cpuUsage;
+	public boolean pleaseWait = true;
 	
 	// Thread to constantly calculate CPU usage
-	Thread t = new Thread() {
+	public Thread t = new Thread() {
 		public void run() {
 			String l;
 			RandomAccessFile raf;
@@ -99,6 +97,7 @@ public class BackgroundTask extends AsyncTask<Context, String, String> {
 			br = new BufferedReader(new InputStreamReader(p.getInputStream()));
 			String line = "", temp = "";
 			int start, end;
+			String lastApp="";
 			
 			// Calculate CPU Usage
 			t.start();
@@ -111,8 +110,11 @@ public class BackgroundTask extends AsyncTask<Context, String, String> {
 					end = temp.indexOf("/");
 					temp = temp.substring(4, end);
 					
-					// Send signal to receiver that an app launch has been detected
-					params[0].sendBroadcast(new Intent(AppspaceReceiver.APP_LAUNCH_DETECTED).putExtra("package", temp));
+					// Send signal to receiver that a new app launch has been detected
+					if(!temp.equals(lastApp))
+						params[0].sendBroadcast(new Intent(AppspaceReceiver.APP_LAUNCH_DETECTED).putExtra("package", temp));
+					
+					lastApp = temp;
 				}
 				else if(line.matches(powerNamePattern)) {
 					char c = line.charAt(line.length()-1);

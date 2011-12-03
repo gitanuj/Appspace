@@ -3,25 +3,23 @@ package com.appspace.main;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.util.Log;
-import android.widget.Toast;
 
 // BroadcastReceiver to listen for updates
 public class AppspaceReceiver extends BroadcastReceiver {
 
-	private static final String tag = "Receiver";
 	public static final String APP_LAUNCH_DETECTED = "com.appspace.main.NEW_APP_LAUNCHED";
 	public static final String SCREEN_OFF = "com.appspace.main.SCREEN_OFF";
 	public static final String SCREEN_ON = "com.appspace.main.SCREEN_ON";
-	public static final int CATEGORY_HIGH_DEMANDING = 1;
-	public static final int CATEGORY_MODERATE_DEMANDING = 2;
-	public static final int CATEGORY_LOW_DEMANDING = 3;
-	public static final int CATEGORY_UNKNOWN = 4;
-	float THRESHOLD_CPU_USAGE = 50f;
-	int MAX_COUNT = 10;
-	int category_thread;
-	boolean loop;
-	int CPU_PROBE_TIME = 1500;
+	private static final int CATEGORY_HIGH_DEMANDING = 1;
+	private static final int CATEGORY_MODERATE_DEMANDING = 2;
+	private static final int CATEGORY_LOW_DEMANDING = 3;
+	private static final int CATEGORY_UNKNOWN = 4;
+	private static final float THRESHOLD_CPU_USAGE = 50f;
+	private static final int MAX_COUNT = 10;
+	private static final int CPU_PROBE_TIME = 1500;
+
+	private int category_thread;
+	private boolean loop;
 	
 	@Override
 	public void onReceive(Context arg0, Intent arg1) {
@@ -30,9 +28,9 @@ public class AppspaceReceiver extends BroadcastReceiver {
         
 		// New app launch detected
 		if(action.equals(APP_LAUNCH_DETECTED)) {
+			String pname = arg1.getExtras().getString("package");
 			AppspaceDbAdapter adapter = new AppspaceDbAdapter(arg0);
 			adapter.open();
-			String pname = arg1.getExtras().getString("package");
 			int category = adapter.fetchPackageCategory(pname);
 			adapter.close();
 			

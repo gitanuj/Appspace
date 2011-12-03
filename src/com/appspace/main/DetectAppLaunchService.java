@@ -2,16 +2,13 @@ package com.appspace.main;
 
 import java.util.ArrayList;
 import java.util.StringTokenizer;
-
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
-import android.util.Log;
 
 // Background service
 public class DetectAppLaunchService extends Service {
 
-	private static final String tag = "Service";
     public static BackgroundTask bt;
     public static ArrayList<String> freq;
     public static int MIN, MAX;
