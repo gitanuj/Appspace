@@ -22,8 +22,8 @@ import android.os.IBinder;
 // Background service
 public class DetectAppLaunchService extends Service {
 
-	private int cycle = 720;
-	private int probe_time = 5000; // In mSec
+	private int cycle = 900;
+	private int probe_time = 2000; // In mSec
 	private int counter=0;
 	private int cycle_id=0;
 	private int mEXTRA_LEVEL;
